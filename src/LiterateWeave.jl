@@ -65,13 +65,30 @@ function literateweave(source, doctype="md2html", args...; literatekwargs = (;),
     sourcename = basename(sourcename)
     sourcename = joinpath(tmpdir, sourcename)
     jmdsource = replace(sourcename, ".md"=>".jmd")
+    @info "deved"
+    latex_cmd = [ 
+        Weave.DEFAULT_LATEX_CMD;  
+        "-output-directory=$(tmpdir)"
+    ]
     run(`cp $(sourcename) $(jmdsource)`)
     # if doctype == "md2html" && get(kwargs, :template, nothing) == nothing && weave == Weave.weave
     #   template = joinpath(@__DIR__(), "..", "assets", "html.tpl")
     #   weave(jmdsource, args...; template=template, kwargs...)
     # else
     # end
-    weave(jmdsource, args...; kwargs...)
+    return_doc = weave(jmdsource, args...; 
+      latex_cmd,
+      fig_path = tmpdir,
+      kwargs...)
+ 
+    # custom post-processing for latex
+    out_path, out_name = splitdir(return_doc)
+    tmp_name = joinpath( tmpdir, out_name )
+    if isfile(tmp_name)
+      cp(tmp_name, return_doc; force = true)
+    end
+    
+    return return_doc    
 end
 
 function literate_preprocess(x)
